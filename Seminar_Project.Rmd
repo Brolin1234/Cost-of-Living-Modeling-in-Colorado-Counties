@@ -1,0 +1,275 @@
+---
+title: "Cost of Living Modeling in Colorado Counties"
+author: "Brolin O'Connell"
+date: "`r Sys.Date()`"
+output:
+  word_document:
+    toc: true
+    toc_depth: '2'
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    df_print: paged
+    theme: readable
+    highlight: tango
+  pdf_document:
+    toc: true
+    toc_depth: '2'
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(scales)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Abstract
+
+This study examines the relationship between housing prices, migrational population changes, and total cost of living across Colorado counties. Using a multiple regression framework, we compare linear, log-linear, and polynomial models to identify the best-fitting approach. The analysis finds that a second-degree polynomial model significantly outperforms linear alternatives, particularly in capturing nonlinear dynamics between average housing price and total cost of living. Visualizations and ANOVA testing support the conclusion that housing price and recent migration-related cost shifts are both strong and nonlinear predictors of regional living costs.
+
+## Introduction 
+
+Rent prices in the US rose 30.9 percent on average from December 2019 through December 2023 [1]. At the same time, the COVID-19 pandemic emerged, requiring non-essential work to be done from the employee’s home. The concentration of remote work ballooned from 5.7% in 2019 to 17.84% in 2021 and fell to 13.84% in 2023, according to the American Community Survey [2]. Without an office to commute to, some remote workers exited pricy metropolitan areas for more attractive living options. Scenic beauty, suburban lifestyles, homeownership, and other draws attracted remote workers to areas where they could not previously live. This inflow of high-income remote workers to desirable areas, in theory, could drive up housing prices, increase income inequality, and price out the residents. This paper seeks to identify a relationship between remote work and changes in housing prices in Colorado counties. We chose Colorado to focus on as the state contains attractive options for remote workers like outdoors, lifestyle, mountains, and cheaper housing than many of the metropolitan cities. 
+
+Remote work has existed since the 1990s, with the invention of the internet and the rise of cell phone usage, working collaboratively at home became possible. This remains a relatively uncommon working option, as 5.7% of the workforce was working remotely by 2019, mostly in industries like information technology, communication, and consulting. The COVID-19 pandemic accelerated the number of remote workers, where non-essential employees were encouraged to remain at home. This prompted employers to shift the majority of work to online, contributing to an estimated 17.9% of workers being remote. The industries with the greatest increase in remote work, over 30%, were professional, scientific, informational, management, finance, and insurance [3]. Employees benefited from greater flexibility, contributing to greater job satisfaction and work-life balance [4]. Employers benefited from greater job productivity in certain industries and lower turnover rates [5]. Also, employers could hire and keep workers who did not live near or move away from the company’s office, reducing relocation costs, paying lower office fees, and increasing the talent pool [5].  Workers from these companies may relocate to areas where they would rather live, typically where their salaries command higher purchasing power.
+
+With the changes in the mobility of the labor market, we expect to see urban counties with a net outflow of workers and suburban/rural counties with a net inflow of workers. Urban centers are the most expensive areas in the county to live in and have the highest concentrations of workers. Additionally, urban centers typically contain industries like finance, information, consulting, and professional roles that experienced a significant increase in the prevalence of remote work. Reality aligns with this expectation: a net of 110,000 remote workers moved away from the San Francisco metro area during 2020 and 2021 compared to the 20,000 moving away before the pandemic [6]. On the other hand, suburban and rural counties have lower costs of living and fewer workers susceptible to working remotely, like agricultural and healthcare. These differences lead us to expect that remote workers would want to move from urban centers to suburban/rural areas because of their premium wages and the affordability of housing. Other factors would also play a role, as people with greater financial flexibility (urban workers) may choose locations that align with their interests, such as outdoor activities, scenic environments, or familiar places. In Colorado, we expect the mountain towns and suburbs to experience greater impacts of remote workers’ relocation, as their unique beauty, culture, and available outdoors would be attractive to teleworkers. At the same time, our expectation is that Denver would lose workers escaping to the attractive mountain towns. 
+
+A net migration of remote workers to a given area should raise the demand and price of housing and rental options, all else equal. In the short run, the supply of housing is fixed, and economic theory tells us that new entrants to the housing market will drive up the housing and rental pricing. In addition, we expect to see a greater inequality in incomes between those who moved in and the local residents. The remote worker’s salaries are typically adjusted to the cost of the metropolitan area where their former office is located, which can provide significant purchasing power when they move to lower-cost-of-living areas. For example, a worker with a median salary in San Francisco earns 141,446 yearly could move to Fort Collins, Colorado, where the median salary is 83,598, according to the US Census Bureau for 2023. At the same time, new remote residents can drive growth in that area through their expense and investment. The income from the remote work would be spent in the rural or suburban town whenever they purchased anything in their new community, bringing money from the city to their new inhabitance. This money can create jobs for residents, contribute to the tax collection of the county, and increase the revenues of the rural/suburban community. The benefits and consequences of this migration would vary based on the country. Where some counties would be able to manage the increase in housing demand and benefit from the inflow of capital, and other counties would experience unhealthy income inequity and housing shortages. 
+
+In theory, the net emigration of remote workers from the city metropolitan areas would bring down the demand for urban housing and, subsequently, the price. As individuals look to leave the city metro areas, they would sell or give up their rentals, increasing the supply and reducing the demand. This should be evident in the changes of housing prices in Denver over time. 
+
+## Literature Review 
+
+Research interest in the implications of remote work was sparked during and following the COVID-19 pandemic. The rise of remote work has reduced the necessity of living near urban job centers, leading to significant migration from high-cost cities to more affordable, less densely populated areas. According to the New York Times, migration data during the pandemic shows a sustained outflow from major metro areas such as New York and San Francisco toward smaller cities and rural regions, particularly in the Mountain West and Sun Belt (e.g., Boise, Denver) [6]. This is supported by the findings of Peter Haslag and Daniel Weagley who found that during the pandemic high-income households, who are disproportionately likely to have transition toward remote work, are moving more for nonwork reasons to “less populated areas and to areas with a lower cost of living, better schools, warmer climates, lower crime rates, and better access to the outdoors” [7].
+
+Migration is a major theme of remote worker research. Haslag P. & Weagley D. found that Remote workers represent 15% of pandemic-influenced workers, and post-pandemic growth is positively related to lifestyle-related migration [7]. Migration impacts are seen in the housing markets as a ‘donut effect’ in Ramani and Bloom 2022 [8]. The ‘donut effect’ is the exodus out of the city centers and into the suburbs, creating a donut shape. Most of them are leaving remote work to move to the suburbs, with a few leasing for small metros and rural areas. The migration findings were corroborated by Xinba Li and Chuanrong Zhang 2021. They found that hotspots for housing markets during 2020 and 2021 were typical suburbs, smaller cities, and areas away from high-cost and dense urban areas. Metropolitan areas experienced these changes differently, as New York City’s housing market cooled, but some Western cities did not. The urban center of Denver experienced the donut effect as housing cooled, and the surrounding suburbs heated up [10]. Cities are the center for many remote jobs; they lost workers and up to 50% of daily spending revenue [9]. This can close down downtown businesses and reduce the number of jobs serving office workers. 
+
+Inequality is another aspect in the research on remote work, as high-paying and educated individuals are more likely to hold a remote job [9]. A gap exists between rural and urban workers; the high-paying work remote jobs are concentrated in the metropolis, and the rural areas lack the specialized workers to participate [11]. The discrepancy in who can work remotely creates a system of haves and have-nots. Authors Augustus Kmetz, John Mondragon, and Johannes Wieland found that from November 2019 to November 2021, remote work resulted in U.S. housing prices rising by 15 percent, accounting for more than 60 percent of the overall increase in house prices []. The group suggests that what is happening is a fundamental shift in preferences caused by the rise in remote work that is reshaping the demand for housing []. This change has significant consequences for those in occupations that do not allow for remote work. Morgane Richard writes on the risk of lower income households becoming priced out of home ownership
+
+
+```{r load-and-clean-data, include=FALSE}
+# Load datasets
+population_data <- read_csv("/Users/brolinoconnell/Desktop/CSU/Spring2025/Seminar/population_data.csv")
+cost_data <- read_csv("/Users/brolinoconnell/Desktop/CSU/Spring2025/Seminar/2p2c_total_by_county_cleaned.csv")
+Housing_price <- read_csv("/Users/brolinoconnell/Desktop/CSU/Spring2025/Seminar/Housing_price.csv")
+
+# Rename and clean
+Housing_price <- Housing_price %>% rename(County = RegionName)
+
+population_data <- population_data %>%
+  mutate(County = str_replace(County, "^\\.*", ""),
+         County = str_replace(County, ", Colorado$", ""),
+         County = str_trim(County))
+
+cost_data <- cost_data %>% mutate(County = str_trim(County))
+
+Housing_price <- Housing_price %>%
+  mutate(County = str_replace(County, "^\\.*", ""),
+         County = str_replace(County, ", Colorado$", ""),
+         County = str_trim(County))
+
+# Merge datasets
+merged_data <- left_join(population_data, cost_data, by = "County")
+merged_all <- left_join(merged_data, Housing_price, by = "County") %>%
+  na.omit()
+
+# Convert diffs to numeric
+merged_all$Diff_2021_2022 <- as.numeric(merged_all$Diff_2021_2022)
+merged_all$Diff_2023_2024 <- as.numeric(merged_all$Diff_2023_2024)
+```
+
+## Linear and Nonlinear Modeling
+
+```{r model-fitting, echo=FALSE}
+# Linear model
+#lm_linear <- lm(Total ~ `Average 2023-24` + Diff_2021_2022 + Diff_2023_2024, data = merged_all)
+#summary(lm_linear)
+
+# Log-linear model
+#lm_logx <- lm(Total ~ log(`Average 2023-24`) + Diff_2021_2022 + Diff_2023_2024, data = merged_all)
+#summary(lm_logx)
+
+# Polynomial model (degree 2)
+#lm_poly <- lm(Total ~ poly(`Average 2023-24`, 2) + Diff_2021_2022 + Diff_2023_2024, data = merged_all)
+#summary(lm_poly)
+
+library(broom)
+library(knitr)
+
+# Fit the models
+lm_linear <- lm(Total ~ `Average 2023-24` + Diff_2021_2022 + Diff_2023_2024, data = merged_all)
+lm_poly <- lm(Total ~ poly(`Average 2023-24`, 2) + Diff_2021_2022 + Diff_2023_2024, data = merged_all)
+
+# Create simple tables
+kable(tidy(lm_linear), caption = "Linear Model Summary")
+kable(tidy(lm_poly), caption = "Polynomial Model Summary")
+
+```
+
+
+
+## Assumption Checks
+
+```{r diagnostics-plots, echo=FALSE}
+par(mfrow = c(1, 2))
+plot(lm_linear, which = 1)  # Residuals vs Fitted
+plot(lm_linear, which = 2)  # Normal Q-Q
+par(mfrow = c(1, 1))
+```
+
+$$
+\begin{array}{ll}
+\textbf{Linearity:} & \mathbb{E}[Y_i \mid X_i] = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} \\
+\\
+\textbf{Independence:} & \operatorname{Cov}(\varepsilon_i, \varepsilon_j) = 0 \quad \text{for all } i \ne j \\
+\\
+\textbf{Homoscedasticity:} & \operatorname{Var}(\varepsilon_i) = \sigma^2 \quad \text{for all } i \\
+\\
+\textbf{Normality of Residuals:} & \varepsilon_i \sim \mathcal{N}(0, \sigma^2) \\
+\\
+\textbf{No Perfect Multicollinearity:} & \operatorname{Rank}(X) = p \quad \text{(full column rank)}
+\end{array}
+$$
+
+Here we assess the normality and the distribution of the residuals from the fitted value in the model. It can be sen in the first figure that the residuals are mostly evenly distributed so this hold the equal variance assumption, it can also be seen that there are no massive deviations form the 45 line on the QQ plot. This means that the residuals are not far from the quantile in which they would be from for a normal distribution so we can assume that the residuals for this model are normal. 
+
+### Linear Model
+```{r plot-linear, echo=FALSE}
+ggplot(merged_all, aes(x = `Average 2023-24`, y = Total)) +
+  geom_point(color = "midnightblue", size = 3, alpha = 0.85) +
+  geom_smooth(method = "lm", se = TRUE, color = "goldenrod", size = 1) +
+  scale_x_log10(labels = comma_format()) +
+  scale_color_viridis_c(option = "plasma", direction = -1) +
+  labs(title = "Cost of Living (Linear Model)",
+       x = "Average Housing Price (2023–2024)",
+       y = "Total Cost of Living",
+       color = "Cost") +
+  theme_minimal(base_size = 14)
+```
+
+
+$$
+\text{Total}_i = \beta_0 + \beta_1 \cdot \text{AvgPrice}_i + \beta_2 \cdot \text{Diff}_{21\_22, i} + \beta_3 \cdot \text{Diff}_{23\_24, i} + \varepsilon_i
+$$
+The basic linear regression model exhibits modest explanatory power, with an adjusted $R^2 = 0.496$, indicating that approximately 49.6\% of the variance in total cost of living is explained by the model. While there is a statistically significant positive association with the average 2023–2024 housing price ($\beta = 1.250 \times 10^{-3}$, $p < 0.001$), the effect size is relatively small. The residuals suggest a nonlinear pattern, with housing prices disproportionately affecting cost of living at both the lower and upper ends of the distribution. This highlights the limitation of assuming a constant marginal effect of housing prices on cost of living across all counties.
+
+### Log-Linear Model
+```{r plot-log-linear, echo=FALSE}
+ggplot(merged_all, aes(x = `Average 2023-24`, y = Total)) +
+  geom_point(color = "#4B0082", size = 3, alpha = 0.85) +
+  stat_smooth(method = "lm", formula = y ~ log(x), se = TRUE, color = "#708090", size = 1.2) +
+  scale_x_log10(labels = comma_format()) +
+  scale_color_viridis_c(option = "plasma", direction = -1) +
+  labs(title = "Cost of Living (Log-linear Model)",
+       x = "Average Housing Price (2023–2024)",
+       y = "Total Cost of Living") +
+  theme_minimal(base_size = 14)
+```
+
+$$
+\text{Total}_i = \beta_0 + \beta_1 \cdot \log(\text{AvgPrice}_i) + \beta_2 \cdot \text{Diff}_{21\_22, i} + \beta_3 \cdot \text{Diff}_{23\_24, i} + \varepsilon_i
+$$
+
+
+This model attempts to capture a non-linear effect of the data and it can be seen that this model is significantly not linear from the earlier r output model summary. This model explains much more varience in the outcome of Total cost of living and highlights the relaitonship better overall than linearity assumptions. 
+
+### Polynomial Model
+```{r plot-polynomial, echo=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(scales)
+library(viridis)
+
+# Reformat the data for faceting
+facet_data <- merged_all %>%
+  mutate(
+    `Avg Housing Price` = `Average 2023-24`,
+    `Change in Cost (2021–2022)` = Diff_2021_2022 + 1,
+    `Change in Cost (2023–2024)` = Diff_2023_2024 + 1
+  ) %>%
+  select(Total, `Avg Housing Price`, `Change in Cost (2021–2022)`, `Change in Cost (2023–2024)`) %>%
+  pivot_longer(
+    cols = -Total,
+    names_to = "Variable",
+    values_to = "Value"
+  )
+
+# Custom strip label formatting
+facet_labels <- c(
+  `Avg Housing Price` = "Avg House Price",
+  `Change in Cost (2021–2022)` = "Diff 2021–2022",
+  `Change in Cost (2023–2024)` = "Diff 2023–2024"
+)
+
+# Final plot with wider facets and clean labels
+ggplot(facet_data, aes(x = Value, y = Total)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.85) +
+  stat_smooth(method = "lm", formula = y ~ poly(x, 2), se = TRUE,
+              color = "darkgreen", size = 1.2) +
+  scale_x_log10(labels = comma_format()) +
+  scale_color_viridis_c(option = "plasma", direction = -1) +
+  facet_wrap(~ Variable, labeller = labeller(Variable = facet_labels), scales = "free_x", nrow = 1) +
+  labs(
+    title = "Polynomial Models (Log-Scaled X-Axis)",
+    x = NULL,
+    y = "Total Cost of Living",
+    color = "Total"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.text = element_text(size = 13, face = "bold"),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16, margin = margin(b = 10)),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+
+$$
+\text{Total}_i = \beta_0 + \beta_1 \cdot \text{AvgPrice}_i + \beta_2 \cdot \text{AvgPrice}_i^2 + \beta_3 \cdot \text{Diff}_{21\_22, i} + \beta_4 \cdot \text{Diff}_{23\_24, i} + \varepsilon_i
+$$
+
+
+This model utilizes a quadratic format to best capture the non-linear relationship, this model explains the most variance accounting for the relationship across covarites effecting the Total cost of living. This highkights that there is a positive non-linear relationship between all variables in the model (migration and housing prices) with the outcome of the Total cost of living. 
+
+## Conclusion
+
+The results strongly support the use of a polynomial model to explain variation in total cost of living across Colorado counties. Compared to linear and log-linear models, the polynomial model captures complex, nonlinear patterns, especially in the effects of average housing prices and inter-year poopulation changes. ANOVA testing confirms this improvement is statistically significant (F = 67.05, p < 3.3e-11). These findings highlight the importance of accounting for curvature in economic relationships and suggest that policies aimed at affordability must consider the nonlinear effects of housing market dynamics and migration trends. 
+
+
+## Citations (Literature Review) 
+
+[1] United States Bureau of Labor Statistics. *Consumer Price Index for All Urban Consumers: Rent of Primary Residence in U.S. City Average*. St. Louis Federal Reserve. https://fred.stlouisfed.org/series/CUUR0000SEHA. Accessed 5 Apr. 2025.
+
+[2] United States Census Bureau. *American Community Survey (ACS) 5-Year Estimates*, Tables B23025, B17001, B19083. U.S. Department of Commerce, 2020–2023. https://data.census.gov. Accessed 5 Apr. 2025.
+
+[3] United States Census Bureau. *FIPS Codes for Counties and County Equivalent Entities*. U.S. Department of Commerce. https://www.census.gov. Accessed 5 Apr. 2025.
+
+[4] Zillow Group. *Zillow Observed Rent Index (ZORI)*. Zillow, Feb. 2025. https://www.zillow.com/research/data. Accessed 5 Apr. 2025.
+
+[5] Forbes Business Council. "The Past, Present And Future Of Remote Work." *Forbes*, 29 Dec. 2022. https://www.forbes.com/councils/forbesbusinesscouncil/2022/12/29/the-past-present-and-future-of-remote-work/. Accessed 5 Apr. 2025.
+
+[6] Bureau of Labor Statistics. "Remote Work and Productivity." *Beyond the Numbers*, vol. 13, 2024. https://www.bls.gov/opub/btn/volume-13/remote-work-productivity.htm. Accessed 5 Apr. 2025.
+
+[7] The New York Times. "Migration Patterns and Movers." *The Upshot*, 17 June 2023. https://www.nytimes.com/interactive/2023/06/17/upshot/17migration-patterns-movers.html. Accessed 5 Apr. 2025.
+
+[8] Haslag, Peter and Weagley, David. "From L.A. to Boise: How Migration Has Changed During the COVID-19 Pandemic." *Journal of Financial and Quantitative Analysis*, vol. 59, no. 5, 2024, pp. 2068–2098. https://doi.org/10.1017/S002210902300073X. Accessed 5 Apr. 2025.
+
+[9] Ramani, Arjun, and Bloom, Nicholas. *The Donut Effect of COVID-19 on Cities*. National Bureau of Economic Research, Working Paper No. 28876, Dec. 2022. https://www.nber.org/system/files/working_papers/w28876/w28876.pdf. Accessed 5 Apr. 2025.
+
+[10] Bloom, Nicholas. "How Working from Home Works Out." *Stanford Institute for Economic Policy Research*, June 2020. https://siepr.stanford.edu/publications/policy-brief/how-working-home-works-out. Accessed 5 Apr. 2025.
+
+[11] Dingel, Jonathan I., and Neiman, Brent. "How Many Jobs Can Be Done at Home?" *Journal of Public Economics*, vol. 189, 2020. https://doi.org/10.1016/j.jpubeco.2020.104235. Accessed 5 Apr. 2025.
+
+[12] Frontiers in Psychology. "Impact of Remote Work on Psychological Health." *Frontiers in Psychology*, 2023. https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2023.1258750/full. Accessed 5 Apr. 2025.
+
+[13] MDPI Sustainability. "Remote Work and Sustainability: A Global Perspective." *Sustainability*, vol. 13, no. 21, 2021. https://www.mdpi.com/2071-1050/13/21/12277. Accessed 5 Apr. 2025.
+
+[14] National Library of Medicine. "The Effects of Remote Work on Health and Lifestyle." *PMC*, 2023. https://pmc.ncbi.nlm.nih.gov/articles/PMC9584402/#sec018. Accessed 5 Apr. 2025.
+
+[15] United States Census Bureau. *County Population Totals and Components of Change: 2020–2023*. https://www.census.gov/data/tables/time-series/demo/popest/2020s-counties-total.html. Accessed 5 Apr. 2025.
